@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title> CHARTS </title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script></head>
+
+    <style>
+        .tab {
+        cursor: pointer;
+        padding: 10px 20px;
+        display: inline-block;
+        background-color: #f1f1f1;
+        border: 1px solid grey;
+        }
+        .tab:hover {
+        background-color: #ddd
+        }
+        .chart-container {
+        display: none;
+        }
+        .active {
+        background-color: white !important:
+        }
+
+        body {
+            background-color: #f4f4f4;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .director-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+            margin: 20px;
+        }
+
+        .director-card {
+            text-align: center;
+            margin: 10px;
+            background-color: #fff;
+            width: 150px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .director-card img {
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .director-card:hover {
+            transform: scale(1.05);
+        }
+
+        .director-card img {
+            width: 100%;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .director-info {
+            padding: 10px;
+        }
+    </style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function createChart(elementId, chartType, labels, datasets) {
+            const ctx = document.getElementById(elementId).getContext('2d');
+            return new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function fetchAndRenderCharts() {
+            Promise.all([
+                fetch("/histogram_data").then(response => { console.log("Histogram data:", response.clone().text()); return response.json(); }),
+                fetch("/bar_chart_data").then(response => { console.log("bar data:", response.clone().text()); return response.json(); }),
+                fetch("/top_movie_counts").then(response => { console.log("top data:", response.clone().text()); return response.json(); }),
+                fetch("/top_avg_score_counts").then(response => { console.log("top data:", response.clone().text()); return response.json(); })
+
+            ])
+            .then(data => {
+                const histogramData = data[0];
+                const barChartData = data[1];
+                const topMovieCountsData = data[2];
+                const topAvgScoreCountsData = data[3]
+
+                createChart("histogram-canvas", "bar", histogramData.years, [{
+                    label: "Counts",
+                    data: histogramData.counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("bar-chart-canvas", "bar", barChartData.years, [{
+                    label: "Counts",
+                    data: barChartData.counts,
+                    backgroundColor: "rgba(255, 99, 132, 0.2)",
+                    borderColor: "rgba(255, 99, 132, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-director-canvas", "bar", topMovieCountsData.director_names, [{
+                    label: "Directors",
+                    data: topMovieCountsData.director_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-actor-canvas", "bar", topMovieCountsData.actor_names, [{
+                    label: "Actors",
+                    data: topMovieCountsData.actor_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-writer-canvas", "bar", topMovieCountsData.writer_names, [{
+                    label: "Writers",
+                    data: topMovieCountsData.writer_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-director-avg-canvas", "bar", topAvgScoreCountsData.director_names, [{
+                    label: "Directors",
+                    data: topAvgScoreCountsData.director_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-actor-avg-canvas", "bar", topAvgScoreCountsData.actor_names, [{
+                    label: "Actors",
+                    data: topAvgScoreCountsData.actor_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+
+                createChart("top-writer-avg-canvas", "bar", topAvgScoreCountsData.writer_names, [{
+                    label: "Writers",
+                    data: topAvgScoreCountsData.writer_counts,
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    borderWidth: 1
+                }]);
+            });
+        }
+
+        fetchAndRenderCharts();
+
+function fetchAndRenderDirectors() {
+    fetch("/top_movie_counts") // Replace with the actual endpoint for director data
+        .then(response => response.json())
+        .then(data => {
+            renderDirectors(data.director_counts, data.director_names, data.director_pics);
+        });
+}
+
+function renderDirectors(counts, names, pics) {
+    const directorsContainer = document.getElementById('directors');
+
+    for (let i = 0; i < counts.length; i++) {
+        const card = createDirectorCard(counts[i], names[i], pics[i]);
+        directorsContainer.appendChild(card);
+    }
+}
+
+function createDirectorCard(count, name, pic) {
+    const card = document.createElement('div');
+    card.className = 'director-card';
+
+    const img = document.createElement('img');
+    img.src = pic;
+    img.alt = name + " Picture";
+    card.appendChild(img);
+
+    const nameElement = document.createElement('p');
+    nameElement.textContent = name;
+    card.appendChild(nameElement);
+
+    const countElement = document.createElement('p');
+    countElement.textContent = `${count} Films`;
+    card.appendChild(countElement);
+
+    return card;
+}
+
+// Call the function to fetch and render directors
+fetchAndRenderDirectors();
+
+        function showChart(event, chartId, chartContainerId) {
+            const chartContainer = document.getElementById(chartContainerId);
+            const containers = chartContainer.getElementsByClassName("chart-container");
+            for (let i = 0; i < containers.length; i++) {
+                containers[i].style.display = "none";
+            }
+
+            const tabs = Array.from(event.currentTarget.parentNode.children);
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            const targetContainer = document.getElementById(chartId);
+            targetContainer.style.display = "block";
+            event.currentTarget.classList.add("active");
+        }
+
+        document.getElementById("director-tab").addEventListener("click", (event) => showChart(event, "director-chart", "movie-count-charts"));
+        document.getElementById("actor-tab").addEventListener("click", (event) => showChart(event, "actor-chart", "movie-count-charts"));
+        document.getElementById("writer-tab").addEventListener("click", (event) => showChart(event, "writer-chart", "movie-count-charts"));
+
+        document.getElementById("director-avg-tab").addEventListener("click", (event) => showChart(event, "director-avg-chart", "score-charts"));
+        document.getElementById("actor-avg-tab").addEventListener("click", (event) => showChart(event, "actor-avg-chart", "score-charts"));
+        document.getElementById("writer-avg-tab").addEventListener("click", (event) => showChart(event, "writer-avg-chart", "score-charts"));
+
+        showChart({ currentTarget: document.getElementById("director-tab") }, "director-chart", "movie-count-charts");
+        showChart({ currentTarget: document.getElementById("director-avg-tab") }, "director-avg-chart", "score-charts");
+    });
+</script>
+</head>
+  <body>
+  {% extends "base.html" %}
+
+{% block content %}
+
+    <canvas id="histogram-canvas"></canvas>
+    <canvas id="bar-chart-canvas"></canvas>
+    <h3> Top 10 Highest Movie Count </h3>
+    <div class="tab" id="director-tab"> Directors</div>
+    <div class="tab" id="actor-tab"> Actors</div>
+    <div class="tab" id="writer-tab"> Writers</div>
+    <div class="chart-container-group" id="movie-count-charts">
+        <div id="director-chart" class="chart-container">
+            <canvas id="top-director-canvas"></canvas>
+        </div>
+        <div id="actor-chart" class="chart-container">
+            <canvas id="top-actor-canvas"></canvas>
+        </div>
+        <div id="writer-chart" class="chart-container">
+            <canvas id="top-writer-canvas"></canvas>
+        </div>
+    </div>
+
+    <h3> Top 10 Highest Average Score </h3>
+
+    <div class="tab" id="director-avg-tab"> Directors</div>
+    <div class="tab" id="actor-avg-tab"> Actors</div>
+    <div class="tab" id="writer-avg-tab"> Writers</div>
+    <div class="chart-container-group" id="score-charts">
+        <div id="director-avg-chart" class="chart-container">
+            <canvas id="top-director-avg-canvas"></canvas>
+        </div>
+        <div id="actor-avg-chart" class="chart-container">
+            <canvas id="top-actor-avg-canvas"></canvas>
+        </div>
+        <div id="writer-avg-chart" class="chart-container">
+            <canvas id="top-writer-avg-canvas"></canvas>
+        </div>
+    </div>
+<div class="director-container" id="directors"></div>
+  {% endblock %}
+</body>
+</html>

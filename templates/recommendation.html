@@ -1,0 +1,212 @@
+<!doctype html>
+
+<html>
+  <head>
+    <style>
+      .movies-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        overflow-x: auto;
+        overflow-y: auto;
+        margin: 10px;
+      }
+
+      .movie {
+        display: flex;
+        flex-direction: row;
+        margin: 20px;
+        border: 2px solid #aaa;
+        border-radius: 4px;
+        width: 550px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .poster {
+        padding: 8px;
+        background-color: #fff;
+        border-right: 1px solid #aaa;
+        display: flex;
+        align-items: center;
+      }
+
+      .poster img {
+        width: 150px;
+        height: 225px;
+      }
+
+      .info {
+        font-family: Gill Sans, sans-serif;
+        font-size: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 8px;
+        background-color: #f5f5f5;
+        width: 100%;
+        height: 225px;
+      }
+
+      .title {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #0077c2;
+      }
+
+      .year,
+      .plot {
+        margin-bottom: 4px;
+        color: #333;
+      }
+
+      .accent {
+        background-color: #0077c2;
+        height: 2px;
+        margin-top: 8px;
+      }
+
+      .movie-link {
+      display: flex;
+        flex-direction: row;
+        margin: 20px;
+        border: 2px solid #aaa;
+        border-radius: 4px;
+        width: 550px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+      }
+
+  .custom-button {
+        width: 80px;  /* Adjust the width and height to make it circular */
+        height: 30px;
+        border-radius: 10%;  /* Make it circular by setting border-radius to 50% */
+        background-color: #3498db;  /* Set the background color */
+        color: #fff;  /* Set the text color */
+        font-size: 10px;  /* Adjust the font size */
+        font-weight: bold;
+        border: none;  /* Remove the border for a cleaner look */
+        cursor: pointer;  /* Change the cursor to indicate it's clickable */
+        outline: none;  /* Remove the default focus outline */
+    }
+
+/* Optional: Add hover effect */
+.custom-button:hover {
+    background-color: #2980b9;  /* Change background color on hover */
+}
+    .form-container {
+        display: none;
+        position: relative;
+        margin-top: 30px; /* Adjust the margin-top as needed */
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+    </style>
+<script>
+    function addFunction(event, ttimdb) {
+        event.preventDefault();
+        toggleForm('addForm_' + ttimdb, ttimdb);
+    }
+
+    function toggleForm(formId, ttimdb) {
+        var form = document.getElementById(formId);
+
+        if (form.style.display === 'block') {
+            form.style.display = 'none';
+        } else {
+            var forms = document.querySelectorAll('.form-container');
+            forms.forEach(function (otherForm) {
+                if (otherForm.id !== formId) {
+                    otherForm.style.display = 'none';
+                }
+            });
+
+            form.style.display = 'block';
+
+            var formTtimdbInput = form.querySelector('input[name="ttimdb"]');
+            if (formTtimdbInput) {
+                formTtimdbInput.value = ttimdb;
+            }
+        }
+    }
+
+    function submitForm(formId) {
+        var form = document.getElementById(formId);
+        var formData = new FormData(form);
+
+        fetch('/submit', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+        form.style.display = 'none';
+    }
+</script>
+</head>
+<body>
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="movies-container">
+    {% for movie in moviePredictions %}
+        {% if movie['tmdb'] != 'none' %}
+            <a href="/movie/{{ movie['ttimdb'] }}" class="movie-link">
+        {% else %}
+            <div class="movie">
+        {% endif %}
+                <div class="poster">
+                    <img src="{{ movie['poster'] }}" alt="{{ movie['title'] }} poster">
+                </div>
+                <div class="info">
+                    <div class="title">{{ movie['title'] }} <span>({{ movie['year'] }})</span></div>
+                    <div class="director">{{ movie['director'] }}</div>
+                    <div class="plot">{{ movie['plot'] }}</div>
+                    <div class="estScore">{{ movie['estScore'] }}</div>
+                    <div class="accent"></div>
+                    <!-- Add space after the accent -->
+                    <span>&nbsp;</span>
+                    <button class="custom-button" onclick="addFunction(event, '{{ movie['ttimdb'] }}')">Add Movie</button>
+                </div>
+            <div class="form-container" id="addForm_{{ movie['ttimdb'] }}" style="display: none;">
+                <!-- Your add form elements go here -->
+                <form onsubmit="submitForm('addForm_{{ movie['ttimdb'] }}'); return false;">
+                    <!-- Your form elements go here -->
+                    <input type="hidden" name="ttimdb" value="">
+                    <label for="score">Score</label>
+                    <input type="text" id="score" name="score">
+                    <br>
+                    <label for="date">Date</label>
+                    <input type="text" id="date" name="date">
+                    <br>
+                    <label for="review">Review</label>
+                    <input type="text" id="review" name="review">
+                    <br>
+                    <input type="submit" value="Submit">
+                </form>
+            </div>
+        {% if movie['tmdb'] != 'none' %}
+            </a>
+        {% else %}
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+</div>
+{% endblock %}
+</body>
+</html>
+
+
+

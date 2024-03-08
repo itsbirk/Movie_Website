@@ -1,0 +1,438 @@
+<!doctype html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.css">
+    <title>My Movie List</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .search-movie input[type="text"] {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .movies-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .movie {
+            margin-bottom: 1rem;
+            text-align: center;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .movie:hover {
+            transform: scale(1.05);
+        }
+
+.poster {
+    position: relative;
+    width: 150px; /* Adjust as needed */
+    height: 225px; /* Adjust as needed */
+}
+
+.poster img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: 0.25rem; /* Rounded corners */
+}
+
+.info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 119, 194, 0.6); /* Semi-transparent blue */
+    color: white;
+    text-align: center;
+    padding: 0.2rem 0;
+    border-bottom-left-radius: 0.25rem;
+    border-bottom-right-radius: 0.25rem;
+}
+.rating {
+font-size: 0.85rem; /* Smaller font size for a sleeker look */
+font-weight: bold;
+}
+
+    .slider-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    input[type="range"] {
+        width: 100%;
+    }
+
+    .filter-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .filter-container select {
+        width: auto;
+    }
+
+    nav ul {
+        padding: 0;
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    nav ul li strong {
+        font-size: 1.5rem;
+        color: #0077c2;
+    }
+
+    nav ul li a {
+        color: #0077c2;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        transition: background-color 0.3s ease;
+    }
+
+    nav ul li a:hover, nav ul li a[role="button"]:hover {
+        background-color: #022f5b;
+        color: white;
+    }
+
+</style>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+  // Initialize the runtime slider with an event listener for filtering
+  initRuntimeSlider();
+
+  // Call the clearFilters() function on document load
+  clearFilters();
+});
+
+function filter() {
+  // Get the input value and convert it to lowercase
+  var input = document.getElementById("search-bar").value.toLowerCase();
+
+  // Get the genre filter value
+  var genreFilter = document.getElementById("genre-dropdown").value.toLowerCase();
+
+  // Get the year filter value
+  var decadeFilter = document.getElementById("decade-dropdown").value;
+
+  // Get the genre filter value
+  var streamingFilter = document.getElementById("streaming-dropdown").value;
+
+  // Get the score filter values
+  var minScore = document.getElementById("score-slider-min").value;
+  var maxScore = document.getElementById("score-slider-max").value;
+
+  // Get all the movie info containers
+  var movies = document.getElementsByClassName("movie");
+  var movielinks = document.getElementsByClassName("movie-link");
+
+  const [minRuntime, maxRuntime] = document.getElementById("runtime-slider").noUiSlider.get().map(Number);
+  // Get the score filter values
+  var minRun = document.getElementById("runtime-slider-min").value;
+  var maxRun = document.getElementById("runtime-slider-max").value;
+
+// Get the year filter values
+  var minYear = document.getElementById("year-slider-min").value;
+  var maxYear = document.getElementById("year-slider-max").value;
+
+  // Loop through all the movies
+  for (var i = 0; i < movies.length; i++) {
+    var movie = movies[i];
+    var movielink = movielinks[i];
+    var showMovie = true;
+    var showlink = true;
+
+    // Filter by search input
+    if (input !== "") {
+      var columns = movie.querySelectorAll(".info > div");
+      var matchFound = false;
+
+      for (var j = 0; j < columns.length; j++) {
+        var column = columns[j];
+        var value = column.innerText.toLowerCase();
+
+        // Check if the column is one of the specified columns to search
+        if (
+          column.classList.contains("title") ||
+          column.classList.contains("directors") ||
+          column.classList.contains("writers") ||
+          column.classList.contains("studio") ||
+          column.classList.contains("cinematographers") ||
+          column.classList.contains("actors") ||
+          column.classList.contains("genres") ||
+          column.classList.contains("composers")
+        ) {
+          // If the column value contains the input value, show the movie
+          if (value.indexOf(input) > -1) {
+            matchFound = true;
+            break;
+          }
+        }
+      }
+
+      if (!matchFound) {
+        showMovie = false;
+      }
+    }
+
+    // Filter by genre
+    if (genreFilter !== "") {
+      var genres = movie.querySelector(".genres").innerText.toLowerCase().split(",");
+      if (genres.indexOf(genreFilter) === -1) {
+        showMovie = false;
+      }
+    }
+
+    // Filter by decade
+    if (decadeFilter !== "") {
+        var decade = parseInt(movie.querySelector(".year").innerText);
+        var decadeStart = parseInt(decadeFilter);
+        var decadeEnd = decadeStart + 9;
+
+        if (decade < decadeStart || decade > decadeEnd) {
+        showMovie = false;
+        }
+        createYearButtons(decadeStart, decadeEnd, movies, movielinks);
+    }
+    else {
+    var yearButtonsContainer = document.getElementById("year-buttons-container");
+    yearButtonsContainer.innerHTML = "";
+    }
+
+    // Filter by streaming site
+    if (streamingFilter !== "") {
+      var sites = movie.querySelector(".streaming").innerText;
+
+      if (sites.indexOf(streamingFilter) === -1) {
+        showMovie = false;
+      }
+    }
+
+    // Filter by score
+    var rating = parseInt(movie.querySelector(".rating").innerText);
+    rating = rating || 0;
+    if (rating < minScore || rating > maxScore) {
+      showMovie = false;
+    }
+
+    // Filter by runtime
+    var runtime = parseInt(movie.querySelector(".data-runtime").innerText);
+    if (runtime < minRun || runtime > maxRun) {
+      showMovie = false;
+    }
+
+    // Filter by year
+    var year = parseInt(movie.querySelector(".year").innerText);
+    if (year < minYear || year > maxYear) {
+      showMovie = false;
+    }
+
+    // Set the movie's display style based on the filters
+    if (showMovie) {
+      movie.style.display = "";
+      movielink.style.display = "";
+    } else {
+      movie.style.display = "none";
+      movielink.style.display = "none";
+    }
+  }
+}
+
+function createYearButtons(decadeStart, decadeEnd, movies, movielinks) {
+  // Clear the year buttons container
+  var yearButtonsContainer = document.getElementById("year-buttons-container");
+  yearButtonsContainer.innerHTML = "";
+
+  // Loop through each year in the decade
+  for (var year = decadeStart; year <= decadeEnd; year++) {
+    // Create a button for each year
+    var yearButton = document.createElement("button");
+    yearButton.innerText = year;
+
+    // Attach onclick function to update showMovie for each movie based on the selected year
+    yearButton.onclick = function () {
+      var selectedYear = parseInt(this.innerText);
+
+      // Loop through all the movies
+      for (var i = 0; i < movies.length; i++) {
+        var movie = movies[i];
+        var movielink = movielinks[i];
+        var showMovie = true;
+
+        // Filter by year
+        var movieYear = parseInt(movie.querySelector(".year").innerText);
+        if (movieYear !== selectedYear) {
+          showMovie = false;
+        }
+
+        // Set the movie's display style based on the updated showMovie value
+        if (showMovie) {
+          movie.style.display = "";
+          movielink.style.display = "";
+        } else {
+          movie.style.display = "none";
+          movielink.style.display = "none";
+        }
+      }
+    };
+
+    // Append the button to the container
+    yearButtonsContainer.appendChild(yearButton);
+  }
+}
+
+
+function clearFilters() {
+  // Clear the search bar
+  document.getElementById("search-bar").value = "";
+
+  // Set the genre filter to all genres
+  document.getElementById("genre-dropdown").value = "";
+
+    // Set the decade filter to all genres
+  document.getElementById("decade-dropdown").value = "";
+
+  document.getElementById("streaming-dropdown").value = "";
+
+  var yearButtonsContainer = document.getElementById("year-buttons-container");
+  yearButtonsContainer.innerHTML = "";
+}
+
+</script>
+
+</head>
+<body>
+{% extends "base.html" %}
+
+{% block content %}
+
+    <div class="search-movie">
+        <input type="text" class="search-box" id="search-bar" onkeyup="filter()" placeholder="Search for movies...">
+    </div>
+
+    <div class="genre-container">
+        <select id="genre-dropdown" onchange="filter()">
+            <option value="">All Genres</option>
+            <option value="Action">Action</option>
+            <option value="Adventure">Adventure</option>
+            <option value="Animation">Animation</option>
+            <option value="Biography">Biography</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Crime">Crime</option>
+            <option value="Drama">Drama</option>
+            <option value="Family">Family</option>
+            <option value="Fantasy">Fantasy</option>
+            <option value="History">History</option>
+            <option value="Horror">Horror</option>
+            <option value="Music">Music</option>
+            <option value="Mystery">Mystery</option>
+            <option value="Romance">Romance</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+            <option value="Sport">Sport</option>
+            <option value="Thriller">Thriller</option>
+            <option value="War">War</option>
+        </select>
+    </div>
+    <div class="decade-container">
+        <select id="decade-dropdown" onchange="filter()">
+            <option value="">Any Decade</option>
+            <option value="2020">2020s</option>
+            <option value="2010">2010s</option>
+            <option value="2000">2000s</option>
+            <option value="1990">1990s</option>
+            <option value="1980">1980s</option>
+            <option value="1970">1970s</option>
+            <option value="1960">1960s</option>
+            <option value="1950">1950s</option>
+            <option value="1940">1940s</option>
+            <option value="1930">1930s</option>
+            <option value="1920">1920s</option>
+            <option value="1910">1910s</option>
+            <option value="1900">1900s</option>
+        </select>
+    </div>
+
+    <div class="streaming-container">
+        <select id="streaming-dropdown" onchange="filter()">
+            <option value="">Any Streaming Service</option>
+            <option value="Netflix">Netflix</option>
+            <option value="Apple TV Plus">Apple TV+</option>
+            <option value="HBO Max">Max</option>
+            <option value="Disney Plus">Disney+</option>
+            <option value="Amazon Prime Video">Amazon Prime</option>
+            <option value="Paramount Plus">Paramount+</option>
+            <option value="Hulu">Hulu</option>
+            <option value="Starz">Starz</option>
+            <option value="Peacock Premium">Peacock</option>
+            <option value="Showtime">Showtime</option>
+            <option value="Criterion Channel">Criterion</option>
+        </select>
+    </div>
+
+    <div class="slider-container">
+        <input type="range" min="0" max="100" value="0" id="score-slider-min" oninput="filter()">
+        <input type="range" min="0" max="100" value="100" id="score-slider-max" oninput="filter()">
+    </div>
+    <div class="slider-container">
+        <input type="range" min="0" max="240" value="0" id="runtime-slider-min" oninput="filter()">
+        <input type="range" min="0" max="240" value="240" id="runtime-slider-max" oninput="filter()">
+    </div>
+    <div class="slider-container">
+        <input type="range" min="1900" max="2025" value="1900" id="year-slider-min" oninput="filter()">
+        <input type="range" min="1900" max="2025" value="2025" id="year-slider-max" oninput="filter()">
+    </div>
+    <div id="year-buttons-container"> </div>
+    <div class="movies-container">
+        {% for movie in movies %}
+            <a href="/movie/{{ movie['ttimdb'] }}" class="movie-link">
+            <div class="movie">
+                <div class="poster">
+                    <img src="{{ movie['poster'] }}" alt="{{ movie['title'] }} poster">
+
+                <div class="info">
+                    <div class="title" style="display:none">{{ movie['Title'] }}</div>
+                    <div class="rating"> {{ movie['rating'] }} </div>
+                    <div class="directors" style="display:none">{{ movie['Directors'] }}</div>
+                    <div class="writers" style="display:none">{{ movie['Writers'] }}</div>
+                    <div class="studio" style="display:none">{{ movie['Studio'] }}</div>
+                    <div class="cinematographers" style="display:none">{{ movie['Cinematographers'] }}</div>
+                    <div class="actors" style="display:none">{{ movie['Actors'] }}</div>
+                    <div class="genres" style="display:none">{{ movie['Genres'] }}</div>
+                    <div class="composers" style="display:none">{{ movie['Composers'] }}</div>
+                    <div class="data-runtime" style="display:none">{{ movie['Runtime'] }}</div>
+                    <div class="year" style="display:none">{{ movie['Year'] }}</div>
+                    <div class="streaming" style="display:none">{{ movie['Streaming'] }}</div>
+
+                </div>
+                </div>
+            </div>
+            </a>
+        {% endfor %}
+    </div>
+  {% endblock %}
+
+</body>
+</html>
